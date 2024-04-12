@@ -29,7 +29,7 @@
     "ie 11"
   ],
   "dependencies": {
-    "@edx/brand": "npm:@edx/brand-openedx@1.1.0",
+    "@edx/brand": "npm:@cucwd-prod/brand-educateworkforce@^2.1.2-nutmeg.2.1",
     "@edx/frontend-component-footer": "npm:@cucwd-prod/frontend-component-footer@10.1.6-maple.3.4",
     "@edx/frontend-component-header": "npm:@cucwd-prod/frontend-component-header@2.4.3-maple.3.2-no-cache",
     "@edx/frontend-platform": "npm:@cucwd-prod/frontend-platform@1.14.4-maple.3.1-no-cache",
