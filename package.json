@@ -32,7 +32,7 @@
     "@edx/brand": "npm:@cucwd-prod/brand-educateworkforce@^2.1.2-nutmeg.2.1",
     "@edx/frontend-component-footer": "npm:@cucwd-prod/frontend-component-footer@10.1.6-maple.3.4",
     "@edx/frontend-component-header": "npm:@cucwd-prod/frontend-component-header@2.4.3-maple.3.2-no-cache",
-    "@edx/frontend-platform": "npm:@cucwd-prod/frontend-platform@1.14.4-maple.3.1-no-cache",
+    "@edx/frontend-platform": "npm:@cucwd-prod/frontend-platform@^1.14.4-maple.3.2-no-cache",
     "@edx/paragon": "16.1.0",
     "@fortawesome/fontawesome-svg-core": "1.2.36",
     "@fortawesome/free-brands-svg-icons": "5.15.4",
