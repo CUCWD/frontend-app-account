@@ -53,6 +53,8 @@ import { fetchSiteLanguages } from './site-language';
 import { fetchCourseList } from '../notification-preferences/data/thunks';
 import NotificationSettings from '../notification-preferences/NotificationSettings';
 import { withLocation, withNavigate } from './hoc';
+import AccountInformationAfterLocationSlot from '../plugin-slots/AccountInformationAfterLocationSlot';
+import ProfileInformationAfterDefaultsSlot from '../plugin-slots/ProfileInformationAfterDefaultsSlot';
 
 class AccountSettingsPage extends React.Component {
   constructor(props, context) {
@@ -684,6 +686,7 @@ class AccountSettingsPage extends React.Component {
               {...editableFieldProps}
             />
             )}
+          <AccountInformationAfterLocationSlot />
         </div>
 
         <div className="account-section pt-3 mb-5" id="profile-information" ref={this.navLinkRefs['#profile-information']}>
@@ -732,6 +735,7 @@ class AccountSettingsPage extends React.Component {
             emptyLabel={this.props.intl.formatMessage(messages['account.settings.field.language.proficiencies.empty'])}
             {...editableFieldProps}
           />
+          <ProfileInformationAfterDefaultsSlot />
         </div>
         <div className="account-section pt-3 mb-6" id="social-media">
           <h2 className="section-heading h4 mb-3">
