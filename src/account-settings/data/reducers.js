@@ -9,7 +9,14 @@ import {
   RESET_DRAFTS,
   SAVE_MULTIPLE_SETTINGS,
   BEGIN_NAME_CHANGE,
+  FETCH_CUSTOM_FIELDS,
+  SAVE_CUSTOM_FIELD,
+  OPEN_CUSTOM_FORM,
+  CLOSE_CUSTOM_FORM,
+  UPDATE_CUSTOM_DRAFT,
+  RESET_CUSTOM_DRAFTS,
 } from './actions';
+import { CUSTOM_ACCOUNT_FIELDS } from './service';
 
 import { reducer as deleteAccountReducer, DELETE_ACCOUNT } from '../delete-account';
 import { reducer as siteLanguageReducer, FETCH_SITE_LANGUAGES } from '../site-language';
@@ -40,7 +47,26 @@ export const defaultState = {
   mostRecentVerifiedName: {},
   verifiedNameHistory: {},
   countriesCodesList: [],
+  customFields: {
+    loading: false,
+    loaded: false,
+    loadingError: null,
+    values: {},
+    drafts: {},
+    openFormId: null,
+    saveState: null,
+    errors: {},
+    options: {},
+    visibility: {},
+  },
 };
+
+const getCustomValues = data => data.values || CUSTOM_ACCOUNT_FIELDS.reduce((values, fieldName) => {
+  if (Object.prototype.hasOwnProperty.call(data, fieldName)) {
+    values[fieldName] = data[fieldName];
+  }
+  return values;
+}, {});
 
 const reducer = (state = defaultState, action = {}) => {
   let dispatcherIsOpenForm;
@@ -82,6 +108,30 @@ const reducer = (state = defaultState, action = {}) => {
         loadingError: null,
       };
 
+    case FETCH_CUSTOM_FIELDS.BEGIN:
+      return {
+        ...state,
+        customFields: { ...state.customFields, loading: true, loaded: false, loadingError: null },
+      };
+    case FETCH_CUSTOM_FIELDS.SUCCESS:
+      return {
+        ...state,
+        customFields: {
+          ...state.customFields,
+          loading: false,
+          loaded: true,
+          loadingError: null,
+          values: { ...state.customFields.values, ...getCustomValues(action.payload) },
+          options: action.payload.options || action.payload.field_options || {},
+          visibility: action.payload.visibility || action.payload.visibility_metadata || {},
+        },
+      };
+    case FETCH_CUSTOM_FIELDS.FAILURE:
+      return {
+        ...state,
+        customFields: { ...state.customFields, loading: false, loaded: false, loadingError: action.payload.error },
+      };
+
     case OPEN_FORM:
       return {
         ...state,
@@ -89,6 +139,17 @@ const reducer = (state = defaultState, action = {}) => {
         saveState: null,
         errors: {},
         drafts: {},
+      };
+    case OPEN_CUSTOM_FORM:
+      return {
+        ...state,
+        customFields: {
+          ...state.customFields,
+          openFormId: action.payload.formId,
+          saveState: null,
+          errors: {},
+          drafts: {},
+        },
       };
     case CLOSE_FORM:
       dispatcherIsOpenForm = action.payload.formId === state.openFormId;
@@ -103,6 +164,18 @@ const reducer = (state = defaultState, action = {}) => {
         };
       }
       return state;
+    case CLOSE_CUSTOM_FORM:
+      if (action.payload.formId !== state.customFields.openFormId) return state;
+      return {
+        ...state,
+        customFields: {
+          ...state.customFields,
+          openFormId: null,
+          saveState: null,
+          errors: {},
+          drafts: {},
+        },
+      };
     case UPDATE_DRAFT:
       return {
         ...state,
@@ -110,11 +183,26 @@ const reducer = (state = defaultState, action = {}) => {
         saveState: null,
         errors: {},
       };
+    case UPDATE_CUSTOM_DRAFT:
+      return {
+        ...state,
+        customFields: {
+          ...state.customFields,
+          drafts: { ...state.customFields.drafts, [action.payload.name]: action.payload.value },
+          saveState: null,
+          errors: {},
+        },
+      };
 
     case RESET_DRAFTS:
       return {
         ...state,
         drafts: {},
+      };
+    case RESET_CUSTOM_DRAFTS:
+      return {
+        ...state,
+        customFields: { ...state.customFields, drafts: {} },
       };
 
     case BEGIN_NAME_CHANGE:
@@ -131,6 +219,35 @@ const reducer = (state = defaultState, action = {}) => {
         ...state,
         saveState: 'pending',
         errors: {},
+      };
+    case SAVE_CUSTOM_FIELD.BEGIN:
+      return {
+        ...state,
+        customFields: { ...state.customFields, saveState: 'pending', errors: {} },
+      };
+    case SAVE_CUSTOM_FIELD.SUCCESS:
+      return {
+        ...state,
+        customFields: {
+          ...state.customFields,
+          saveState: 'complete',
+          values: { ...state.customFields.values, ...action.payload.values },
+          errors: {},
+        },
+      };
+    case SAVE_CUSTOM_FIELD.FAILURE:
+      return {
+        ...state,
+        customFields: {
+          ...state.customFields,
+          saveState: 'error',
+          errors: { ...state.customFields.errors, ...action.payload.errors },
+        },
+      };
+    case SAVE_CUSTOM_FIELD.RESET:
+      return {
+        ...state,
+        customFields: { ...state.customFields, saveState: null, errors: {} },
       };
     case SAVE_SETTINGS.SUCCESS:
       return {
