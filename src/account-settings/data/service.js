@@ -16,6 +16,68 @@ const SOCIAL_PLATFORMS = [
   { id: 'linkedin', key: 'social_link_linkedin' },
 ];
 
+export const CUSTOM_ACCOUNT_FIELDS = [
+  'ethnicity',
+  'employment_status',
+  'enrolled_in_school',
+  'enrolled_in_school_type',
+  'local_community_living',
+  'zipcode',
+];
+
+function normalizeCustomFieldErrors(fieldErrors) {
+  return Object.entries(fieldErrors).reduce((acc, [fieldName, error]) => {
+    if (Array.isArray(error)) {
+      acc[fieldName] = error.join(' ');
+    } else if (error && typeof error === 'object') {
+      acc[fieldName] = error.user_message || error.message || error.detail;
+    } else {
+      acc[fieldName] = error;
+    }
+    return acc;
+  }, {});
+}
+
+function handleCustomFieldRequestError(error) {
+  const responseData = error.response?.data;
+  const fieldErrors = responseData?.field_errors || CUSTOM_ACCOUNT_FIELDS.reduce((acc, fieldName) => {
+    if (responseData?.[fieldName]) {
+      acc[fieldName] = responseData[fieldName];
+    }
+    return acc;
+  }, {});
+
+  if (Object.keys(fieldErrors).length > 0) {
+    const apiError = Object.create(error);
+    apiError.fieldErrors = normalizeCustomFieldErrors(fieldErrors);
+    throw apiError;
+  }
+  throw error;
+}
+
+export async function getCustomFields() {
+  const requestUrl = `${getConfig().LMS_BASE_URL}/api/custom-reg-form/v1/me/`;
+  const { data } = await getAuthenticatedHttpClient()
+    .get(requestUrl)
+    .catch(handleCustomFieldRequestError);
+  return data;
+}
+
+export async function patchCustomFields(commitValues) {
+  const requestUrl = `${getConfig().LMS_BASE_URL}/api/custom-reg-form/v1/me/`;
+  const requestConfig = { headers: { 'Content-Type': 'application/json' } };
+  const customFieldValues = pick(commitValues, CUSTOM_ACCOUNT_FIELDS);
+  const editedFields = Object.keys(customFieldValues);
+  if (editedFields.length !== 1) {
+    throw new Error('patchCustomFields requires exactly one custom field');
+  }
+
+  const { data } = await getAuthenticatedHttpClient()
+    .patch(requestUrl, customFieldValues, requestConfig)
+    .catch(handleCustomFieldRequestError);
+  return data;
+}
+
 function unpackAccountResponseData(data) {
   const unpackedData = data;
 
@@ -251,6 +313,7 @@ export async function patchSettings(username, commitValues) {
     commitValues,
     preferenceKeys,
     certificateKeys,
+    ...CUSTOM_ACCOUNT_FIELDS,
   );
   const preferenceCommitValues = pick(commitValues, preferenceKeys);
   const certCommitValues = pick(commitValues, certificateKeys);
