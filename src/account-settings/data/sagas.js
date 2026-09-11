@@ -12,12 +12,20 @@ import {
   fetchSettingsBegin,
   fetchSettingsSuccess,
   fetchSettingsFailure,
+  fetchCustomFieldsBegin,
+  fetchCustomFieldsSuccess,
+  fetchCustomFieldsFailure,
   closeForm,
   SAVE_SETTINGS,
   SAVE_MULTIPLE_SETTINGS,
+  FETCH_CUSTOM_FIELDS,
+  SAVE_CUSTOM_FIELD,
   saveSettingsBegin,
   saveSettingsSuccess,
   saveSettingsFailure,
+  saveCustomFieldBegin,
+  saveCustomFieldSuccess,
+  saveCustomFieldFailure,
   savePreviousSiteLanguage,
   FETCH_TIME_ZONES,
   fetchTimeZones,
@@ -45,6 +53,8 @@ import {
   patchSettings,
   getTimeZones,
   getVerifiedNameHistory,
+  getCustomFields,
+  patchCustomFields,
 } from './service';
 
 export function* handleFetchSettings() {
@@ -73,9 +83,38 @@ export function* handleFetchSettings() {
       verifiedNameHistory,
       countriesCodesList: countries,
     }));
+    yield call(handleFetchCustomFields);
   } catch (e) {
     yield put(fetchSettingsFailure(e.message));
     throw e;
+  }
+}
+
+export function* handleFetchCustomFields() {
+  try {
+    yield put(fetchCustomFieldsBegin());
+    const customFields = yield call(getCustomFields);
+    yield put(fetchCustomFieldsSuccess(customFields));
+  } catch (e) {
+    yield put(fetchCustomFieldsFailure(e.message));
+  }
+}
+
+export function* handleSaveCustomField(action) {
+  try {
+    yield put(saveCustomFieldBegin());
+    const { formId, commitValues } = action.payload;
+    const savedValues = yield call(patchCustomFields, { [formId]: commitValues });
+    yield put(saveCustomFieldSuccess(savedValues));
+    yield delay(1000);
+    yield put(closeForm(formId));
+  } catch (e) {
+    if (e.fieldErrors) {
+      yield put(saveCustomFieldFailure({ fieldErrors: e.fieldErrors }));
+    } else {
+      yield put(saveCustomFieldFailure({ fieldErrors: {}, message: e.message }));
+      throw e;
+    }
   }
 }
 
@@ -158,6 +197,8 @@ export function* handleFetchTimeZones(action) {
 
 export default function* saga() {
   yield takeEvery(FETCH_SETTINGS.BASE, handleFetchSettings);
+  yield takeEvery(FETCH_CUSTOM_FIELDS.BASE, handleFetchCustomFields);
+  yield takeEvery(SAVE_CUSTOM_FIELD.BASE, handleSaveCustomField);
   yield takeEvery(SAVE_SETTINGS.BASE, handleSaveSettings);
   yield takeEvery(SAVE_MULTIPLE_SETTINGS.BASE, handleSaveMultipleSettings);
   yield takeEvery(FETCH_TIME_ZONES.BASE, handleFetchTimeZones);

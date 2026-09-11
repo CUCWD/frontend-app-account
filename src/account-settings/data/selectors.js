@@ -1,10 +1,45 @@
 import { createSelector, createStructuredSelector } from 'reselect';
 import { siteLanguageListSelector, siteLanguageOptionsSelector } from '../site-language';
 import { compareVerifiedNamesByCreatedDate } from '../../utils';
+import { CUSTOM_ACCOUNT_FIELDS } from './service';
 
 export const storeName = 'accountSettings';
 
 export const accountSettingsSelector = state => ({ ...state[storeName] });
+
+export const customFieldsSelector = createSelector(
+  accountSettingsSelector,
+  accountSettings => accountSettings.customFields,
+);
+
+export const customValuesSelector = createSelector(
+  customFieldsSelector,
+  customFields => customFields.values,
+);
+
+export const customDraftsSelector = createSelector(
+  customFieldsSelector,
+  customFields => customFields.drafts,
+);
+
+export const customOptionsSelector = createSelector(
+  customFieldsSelector,
+  customFields => customFields.options,
+);
+
+export const customVisibilitySelector = createSelector(
+  customFieldsSelector,
+  customFields => customFields.visibility,
+);
+
+export const customFormValuesSelector = createSelector(
+  customValuesSelector,
+  customDraftsSelector,
+  (values, drafts) => Object.keys(values).reduce((formValues, name) => {
+    formValues[name] = drafts[name] !== undefined ? drafts[name] : values[name];
+    return formValues;
+  }, {}),
+);
 
 const editableFieldNameSelector = (state, props) => props.name;
 
@@ -96,7 +131,9 @@ const countriesSelector = createSelector(
 const editableFieldErrorSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
-  (name, accountSettings) => accountSettings.errors[name],
+  (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? accountSettings.customFields.errors[name]
+    : accountSettings.errors[name],
 );
 
 const editableFieldConfirmationValuesSelector = createSelector(
@@ -108,7 +145,9 @@ const editableFieldConfirmationValuesSelector = createSelector(
 const isEditingSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
-  (name, accountSettings) => accountSettings.openFormId === name,
+  (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? accountSettings.customFields.openFormId === name
+    : accountSettings.openFormId === name,
 );
 
 const errorSelector = createSelector(
@@ -122,8 +161,11 @@ const nameChangeModalSelector = createSelector(
 );
 
 const saveStateSelector = createSelector(
+  editableFieldNameSelector,
   accountSettingsSelector,
-  accountSettings => accountSettings.saveState,
+  (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? accountSettings.customFields.saveState
+    : accountSettings.saveState,
 );
 
 export const editableFieldSelector = createStructuredSelector({

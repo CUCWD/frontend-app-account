@@ -1,4 +1,11 @@
-import { profileDataManagerSelector, formValuesSelector } from './selectors';
+import {
+  profileDataManagerSelector,
+  formValuesSelector,
+  customFormValuesSelector,
+  customOptionsSelector,
+  customVisibilitySelector,
+  editableFieldSelector,
+} from './selectors';
 
 const testValue = 'test VALUE';
 
@@ -68,5 +75,36 @@ describe('profileDataManagerSelector', () => {
     };
 
     expect(result).toEqual(expected);
+  });
+});
+
+describe('custom account field selectors', () => {
+  const state = {
+    accountSettings: {
+      customFields: {
+        values: { zipcode: '12345' },
+        drafts: { zipcode: '90210' },
+        options: { zipcode: [{ value: '12345', label: '12345' }] },
+        visibility: { zipcode: 'optional' },
+        errors: { zipcode: 'Invalid ZIP Code.' },
+        openFormId: 'zipcode',
+        saveState: 'pending',
+      },
+    },
+  };
+
+  it('returns custom form values, options, and visibility metadata', () => {
+    expect(customFormValuesSelector(state)).toEqual({ zipcode: '90210' });
+    expect(customOptionsSelector(state)).toEqual(state.accountSettings.customFields.options);
+    expect(customVisibilitySelector(state)).toEqual(state.accountSettings.customFields.visibility);
+  });
+
+  it('maps custom state to EditableSelectField props', () => {
+    expect(editableFieldSelector(state, { name: 'zipcode' })).toEqual({
+      error: 'Invalid ZIP Code.',
+      confirmationValue: undefined,
+      saveState: 'pending',
+      isEditing: true,
+    });
   });
 });
