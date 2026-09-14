@@ -237,8 +237,19 @@ const reducer = (state = defaultState, action = {}) => {
         customFields: {
           ...state.customFields,
           saveState: 'complete',
-          values: { ...state.customFields.values, ...action.payload.values },
+          values: {
+            ...state.customFields.values,
+            ...getCustomValues(action.payload.values || action.payload),
+          },
           errors: {},
+          options: action.payload.options
+            || action.payload.field_options
+            || action.payload.metadata?.options
+            || state.customFields.options,
+          visibility: action.payload.visibility
+            || action.payload.visibility_metadata
+            || action.payload.metadata?.visibility
+            || state.customFields.visibility,
         },
       };
     case SAVE_CUSTOM_FIELD.FAILURE:
