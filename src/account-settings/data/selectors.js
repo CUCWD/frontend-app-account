@@ -35,7 +35,7 @@ export const customVisibilitySelector = createSelector(
 export const customFormValuesSelector = createSelector(
   customValuesSelector,
   customDraftsSelector,
-  (values, drafts) => Object.keys(values).reduce((formValues, name) => {
+  (values, drafts) => [...new Set([...Object.keys(values), ...Object.keys(drafts)])].reduce((formValues, name) => {
     formValues[name] = drafts[name] !== undefined ? drafts[name] : values[name];
     return formValues;
   }, {}),
@@ -133,13 +133,13 @@ const editableFieldErrorSelector = createSelector(
   accountSettingsSelector,
   (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
     ? accountSettings.customFields.errors[name]
-    : accountSettings.errors[name],
+    : accountSettings.errors?.[name],
 );
 
 const editableFieldConfirmationValuesSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
-  (name, accountSettings) => accountSettings.confirmationValues[name],
+  (name, accountSettings) => accountSettings.confirmationValues?.[name],
 );
 
 const isEditingSelector = createSelector(
@@ -168,12 +168,29 @@ const saveStateSelector = createSelector(
     : accountSettings.saveState,
 );
 
-export const editableFieldSelector = createStructuredSelector({
-  error: editableFieldErrorSelector,
-  confirmationValue: editableFieldConfirmationValuesSelector,
-  saveState: saveStateSelector,
-  isEditing: isEditingSelector,
-});
+const customEditableFieldPropsSelector = createSelector(
+  editableFieldNameSelector,
+  customFormValuesSelector,
+  customOptionsSelector,
+  (name, values, options) => (CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? { value: values[name], options: options[name] || [] }
+    : {}),
+);
+
+export const editableFieldSelector = createSelector(
+  editableFieldErrorSelector,
+  editableFieldConfirmationValuesSelector,
+  saveStateSelector,
+  isEditingSelector,
+  customEditableFieldPropsSelector,
+  (error, confirmationValue, saveState, isEditing, customProps) => ({
+    error,
+    confirmationValue,
+    saveState,
+    isEditing,
+    ...customProps,
+  }),
+);
 
 export const profileDataManagerSelector = createSelector(
   accountSettingsSelector,

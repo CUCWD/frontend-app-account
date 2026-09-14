@@ -26,6 +26,25 @@ describe('custom account fields reducer', () => {
     });
   });
 
+  it('normalizes metadata envelopes into the account-settings custom field shape', () => {
+    const state = reducer(defaultState, {
+      type: FETCH_CUSTOM_FIELDS.SUCCESS,
+      payload: {
+        values: { ethnicity: 'asian' },
+        metadata: {
+          options: { ethnicity: [{ value: 'asian', label: 'Asian' }] },
+          visibility: { ethnicity: 'required' },
+        },
+      },
+    });
+
+    expect(state.customFields).toMatchObject({
+      values: { ethnicity: 'asian' },
+      options: { ethnicity: [{ value: 'asian', label: 'Asian' }] },
+      visibility: { ethnicity: 'required' },
+    });
+  });
+
   it('keeps custom drafts, editing, save state, and errors isolated from core state', () => {
     const editingState = reducer(defaultState, {
       type: OPEN_CUSTOM_FORM,
