@@ -122,8 +122,14 @@ const reducer = (state = defaultState, action = {}) => {
           loaded: true,
           loadingError: null,
           values: { ...state.customFields.values, ...getCustomValues(action.payload) },
-          options: action.payload.options || action.payload.field_options || {},
-          visibility: action.payload.visibility || action.payload.visibility_metadata || {},
+          options: action.payload.options
+            || action.payload.field_options
+            || action.payload.metadata?.options
+            || {},
+          visibility: action.payload.visibility
+            || action.payload.visibility_metadata
+            || action.payload.metadata?.visibility
+            || {},
         },
       };
     case FETCH_CUSTOM_FIELDS.FAILURE:

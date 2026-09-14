@@ -99,12 +99,38 @@ describe('custom account field selectors', () => {
     expect(customVisibilitySelector(state)).toEqual(state.accountSettings.customFields.visibility);
   });
 
+  it('returns a draft value when the custom field has no committed value', () => {
+    const draftOnlyState = {
+      accountSettings: {
+        customFields: {
+          values: {},
+          drafts: { ethnicity: 'asian' },
+          options: {},
+          visibility: {},
+        },
+      },
+    };
+
+    expect(customFormValuesSelector(draftOnlyState)).toEqual({ ethnicity: 'asian' });
+  });
+
   it('maps custom state to EditableSelectField props', () => {
     expect(editableFieldSelector(state, { name: 'zipcode' })).toEqual({
       error: 'Invalid ZIP Code.',
       confirmationValue: undefined,
       saveState: 'pending',
       isEditing: true,
+      value: '90210',
+      options: [{ value: '12345', label: '12345' }],
+    });
+  });
+
+  it('does not override core field values or options', () => {
+    expect(editableFieldSelector(state, { name: 'country' })).toEqual({
+      error: undefined,
+      confirmationValue: undefined,
+      saveState: undefined,
+      isEditing: false,
     });
   });
 });
