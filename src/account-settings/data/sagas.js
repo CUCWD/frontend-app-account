@@ -1,5 +1,5 @@
 import {
-  call, put, delay, takeEvery, all,
+  call, put, delay, takeEvery, takeLatest, all, select,
 } from 'redux-saga/effects';
 
 import { publish } from '@edx/frontend-platform';
@@ -92,6 +92,11 @@ export function* handleFetchSettings() {
 
 export function* handleFetchCustomFields() {
   try {
+    const customFieldsState = yield select(state => state.accountSettings?.customFields || {});
+    if (customFieldsState.loading || customFieldsState.loaded) {
+      return;
+    }
+
     yield put(fetchCustomFieldsBegin());
     const customFields = yield call(getCustomFields);
     yield put(fetchCustomFieldsSuccess(customFields));
@@ -197,7 +202,7 @@ export function* handleFetchTimeZones(action) {
 
 export default function* saga() {
   yield takeEvery(FETCH_SETTINGS.BASE, handleFetchSettings);
-  yield takeEvery(FETCH_CUSTOM_FIELDS.BASE, handleFetchCustomFields);
+  yield takeLatest(FETCH_CUSTOM_FIELDS.BASE, handleFetchCustomFields);
   yield takeEvery(SAVE_CUSTOM_FIELD.BASE, handleSaveCustomField);
   yield takeEvery(SAVE_SETTINGS.BASE, handleSaveSettings);
   yield takeEvery(SAVE_MULTIPLE_SETTINGS.BASE, handleSaveMultipleSettings);
