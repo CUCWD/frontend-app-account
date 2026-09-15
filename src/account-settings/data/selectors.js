@@ -5,7 +5,7 @@ import { CUSTOM_ACCOUNT_FIELDS } from './service';
 
 export const storeName = 'accountSettings';
 
-export const accountSettingsSelector = state => ({ ...state[storeName] });
+export const accountSettingsSelector = state => state[storeName];
 
 export const customFieldsSelector = createSelector(
   accountSettingsSelector,
