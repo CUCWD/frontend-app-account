@@ -125,7 +125,7 @@ describe('custom account field sagas', () => {
 
     expect(iterator.next().value).toMatchObject({
       '@@redux-saga/IO': true,
-      combinator: 'select',
+      combinator: false,
     });
     expect(iterator.next({ loading: false, loaded: false }).value).toEqual(put(fetchCustomFieldsBegin()));
     expect(iterator.next().value).toEqual(call(getCustomFields));
@@ -138,7 +138,7 @@ describe('custom account field sagas', () => {
 
     expect(iterator.next().value).toMatchObject({
       '@@redux-saga/IO': true,
-      combinator: 'select',
+      combinator: false,
     });
     expect(iterator.next({ loading: true, loaded: false }).done).toBe(true);
 
