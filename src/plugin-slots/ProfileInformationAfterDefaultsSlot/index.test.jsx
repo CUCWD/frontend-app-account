@@ -1,13 +1,87 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { Provider } from 'react-redux';
+import configureStore from 'redux-mock-store';
+import { IntlProvider } from '@edx/frontend-platform/i18n';
 import ProfileInformationAfterDefaultsSlot from '.';
 
 describe('ProfileInformationAfterDefaultsSlot', () => {
-  it('renders the profile information plugin slot', () => {
-    render(<ProfileInformationAfterDefaultsSlot />);
+  const mockStore = configureStore();
 
-    expect(screen.getByText(
-      'PluginSlot_org.skilredi.frontend.account.profile_information_after_defaults.v1',
-    )).toBeInTheDocument();
+  const renderSlot = (customFields = {}) => {
+    const store = mockStore({
+      accountSettings: {
+        customFields: {
+          values: {
+            ethnicity: 'asian',
+            employment_status: 'employed',
+            enrolled_in_school: 'yes',
+            enrolled_in_school_type: 'university',
+            local_community_living: 'yes',
+            ...customFields.values,
+          },
+          drafts: {},
+          options: {
+            ethnicity: [{ value: 'asian', label: 'Asian' }],
+            employment_status: [{ value: 'employed', label: 'Employed' }],
+            enrolled_in_school: [{ value: 'yes', label: 'Yes' }],
+            enrolled_in_school_type: [{ value: 'university', label: 'University' }],
+            local_community_living: [{ value: 'yes', label: 'Yes' }],
+            ...customFields.options,
+          },
+          visibility: {
+            ethnicity: 'required',
+            employment_status: 'optional',
+            enrolled_in_school: 'required',
+            enrolled_in_school_type: 'optional',
+            local_community_living: 'optional',
+            ...customFields.visibility,
+          },
+          errors: {},
+          openFormId: null,
+          saveState: null,
+        },
+      },
+    });
+
+    render(
+      <IntlProvider locale="en">
+        <Provider store={store}>
+          <ProfileInformationAfterDefaultsSlot />
+        </Provider>
+      </IntlProvider>,
+    );
+  };
+
+  it('renders visible profile fields with saved values and backend options', () => {
+    renderSlot();
+
+    expect(screen.getByText('PluginSlot_org.skilredi.frontend.account.profile_information_after_defaults.v1'))
+      .toBeInTheDocument();
+    expect(screen.getByText('Ethnicity')).toBeInTheDocument();
+    expect(screen.getByText('Asian')).toBeInTheDocument();
+    expect(screen.getByText('Employment status')).toBeInTheDocument();
+    expect(screen.getByText('Employed')).toBeInTheDocument();
+    expect(screen.getByText('Enrolled in school')).toBeInTheDocument();
+    expect(screen.getByText('University')).toBeInTheDocument();
+    expect(screen.getByText('Local community living')).toBeInTheDocument();
+  });
+
+  it('does not render fields hidden by backend metadata', () => {
+    renderSlot({
+      visibility: {
+        ethnicity: 'hidden',
+        employment_status: 'hidden',
+        enrolled_in_school: 'hidden',
+        enrolled_in_school_type: 'hidden',
+        local_community_living: 'hidden',
+      },
+    });
+
+    expect(screen.queryByText('Ethnicity')).not.toBeInTheDocument();
+    expect(screen.queryByText('Employment status')).not.toBeInTheDocument();
+    expect(screen.queryByText('Enrolled in school')).not.toBeInTheDocument();
+    expect(screen.queryByText('School type')).not.toBeInTheDocument();
+    expect(screen.queryByText('Local community living')).not.toBeInTheDocument();
   });
 });
