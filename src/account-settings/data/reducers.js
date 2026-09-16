@@ -109,6 +109,9 @@ const reducer = (state = defaultState, action = {}) => {
       };
 
     case FETCH_CUSTOM_FIELDS.BEGIN:
+      if (state.customFields.loading || state.customFields.loaded) {
+        return state;
+      }
       return {
         ...state,
         customFields: { ...state.customFields, loading: true, loaded: false, loadingError: null },
