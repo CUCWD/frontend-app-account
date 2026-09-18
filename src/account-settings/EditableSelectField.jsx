@@ -39,6 +39,7 @@ const EditableSelectField = (props) => {
     isEditing,
     isEditable,
     isGrayedOut,
+    isRequired,
     intl,
     ...others
   } = props;
@@ -98,6 +99,14 @@ const EditableSelectField = (props) => {
       value: confirmationValue,
     });
   };
+
+  const renderRequiredLabel = () => (
+    <>
+      {label}
+      {isRequired && <span aria-hidden="true"> *</span>}
+    </>
+  );
+
   const selectOptions = options.map((option) => {
     if (option.group) {
       // If the option has a 'group' property, it represents an element with sub-options.
@@ -133,7 +142,7 @@ const EditableSelectField = (props) => {
                 controlId={id}
                 isInvalid={error != null}
               >
-                <Form.Label size="sm" className="h6 d-block" htmlFor={id}>{label}</Form.Label>
+                <Form.Label size="sm" className="h6 d-block" htmlFor={id}>{renderRequiredLabel()}</Form.Label>
                 <Form.Control
                   data-hj-suppress
                   name={name}
@@ -142,6 +151,7 @@ const EditableSelectField = (props) => {
                   as={type}
                   value={value}
                   onChange={handleChange}
+                  aria-required={isRequired}
                   {...others}
                 >
                   {options.length > 0 && selectOptions}
@@ -184,7 +194,7 @@ const EditableSelectField = (props) => {
         default: (
           <div className="form-group">
             <div className="d-flex align-items-start">
-              <h6 aria-level="3">{label}</h6>
+              <h6 aria-level="3">{renderRequiredLabel()}</h6>
               {isEditable ? (
                 <Button variant="link" onClick={handleEdit} className="ml-3">
                   <FontAwesomeIcon className="mr-1" icon={faPencilAlt} />{intl.formatMessage(messages['account.settings.editable.field.action.edit'])}
@@ -227,6 +237,7 @@ EditableSelectField.propTypes = {
   isEditing: PropTypes.bool,
   isEditable: PropTypes.bool,
   isGrayedOut: PropTypes.bool,
+  isRequired: PropTypes.bool,
   intl: intlShape.isRequired,
 };
 
@@ -243,6 +254,7 @@ EditableSelectField.defaultProps = {
   isEditing: false,
   isEditable: true,
   isGrayedOut: false,
+  isRequired: false,
   userSuppliedValue: undefined,
 };
 

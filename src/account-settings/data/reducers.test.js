@@ -50,7 +50,14 @@ describe('custom account fields reducer', () => {
     expect(state.customFields).toMatchObject({
       values: { ethnicity: 'asian' },
       options: { ethnicity: [{ value: 'asian', label: 'Asian' }] },
-      visibility: { ethnicity: 'required' },
+      visibility: {
+        ethnicity: 'required',
+        employment_status: 'optional',
+        enrolled_in_school: 'optional',
+        enrolled_in_school_type: 'optional',
+        local_community_living: 'optional',
+        zipcode: 'optional',
+      },
     });
   });
 

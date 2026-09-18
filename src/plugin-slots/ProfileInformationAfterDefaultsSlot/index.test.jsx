@@ -67,6 +67,24 @@ describe('ProfileInformationAfterDefaultsSlot', () => {
     expect(screen.getByText('Local community living')).toBeInTheDocument();
   });
 
+  it('marks required custom fields with the required label convention', () => {
+    renderSlot({
+      visibility: {
+        ethnicity: 'required',
+        employment_status: 'required',
+        enrolled_in_school: 'required',
+        enrolled_in_school_type: 'required',
+        local_community_living: 'required',
+      },
+    });
+
+    expect(screen.getByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'Ethnicity *')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'Employment status *')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'Enrolled in school *')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'School type *')).toBeInTheDocument();
+    expect(screen.getByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'Local community living *')).toBeInTheDocument();
+  });
+
   it('does not render fields hidden by backend metadata', () => {
     renderSlot({
       visibility: {
