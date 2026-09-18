@@ -39,6 +39,7 @@ const EditableField = (props) => {
     isEditing,
     isEditable,
     isGrayedOut,
+    isRequired,
     intl,
     ...others
   } = props;
@@ -90,6 +91,13 @@ const EditableField = (props) => {
     });
   };
 
+  const renderRequiredLabel = () => (
+    <>
+      {label}
+      {isRequired && <span aria-hidden="true"> *</span>}
+    </>
+  );
+
   return (
     <SwitchContent
       expression={isEditing ? 'editing' : 'default'}
@@ -101,7 +109,7 @@ const EditableField = (props) => {
                 controlId={id}
                 isInvalid={error != null}
               >
-                <Form.Label size="sm" className="h6 d-block" htmlFor={id}>{label}</Form.Label>
+                <Form.Label size="sm" className="h6 d-block" htmlFor={id}>{renderRequiredLabel()}</Form.Label>
                 <Form.Control
                   data-hj-suppress
                   name={name}
@@ -109,6 +117,7 @@ const EditableField = (props) => {
                   type={type}
                   value={value}
                   onChange={handleChange}
+                  aria-required={isRequired}
                   {...others}
                 />
                 {!!helpText && <Form.Text>{helpText}</Form.Text>}
@@ -149,7 +158,7 @@ const EditableField = (props) => {
         default: (
           <div className="form-group">
             <div className="d-flex align-items-start">
-              <h6 aria-level="3">{label}</h6>
+              <h6 aria-level="3">{renderRequiredLabel()}</h6>
               {isEditable ? (
                 <Button variant="link" onClick={handleEdit} className="ml-3">
                   <FontAwesomeIcon className="mr-1" icon={faPencilAlt} />{intl.formatMessage(messages['account.settings.editable.field.action.edit'])}
@@ -188,6 +197,7 @@ EditableField.propTypes = {
   isEditing: PropTypes.bool,
   isEditable: PropTypes.bool,
   isGrayedOut: PropTypes.bool,
+  isRequired: PropTypes.bool,
   intl: intlShape.isRequired,
 };
 
@@ -203,6 +213,7 @@ EditableField.defaultProps = {
   isEditing: false,
   isEditable: true,
   isGrayedOut: false,
+  isRequired: false,
   userSuppliedValue: undefined,
 };
 

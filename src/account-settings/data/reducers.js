@@ -24,6 +24,21 @@ import { reducer as resetPasswordReducer, RESET_PASSWORD } from '../reset-passwo
 import { reducer as nameChangeReducer, REQUEST_NAME_CHANGE } from '../name-change';
 import { reducer as thirdPartyAuthReducer, DISCONNECT_AUTH } from '../third-party-auth';
 
+export const DEFAULT_CUSTOM_FIELD_VISIBILITY = 'optional';
+
+export const normalizeCustomFieldVisibility = (visibility = {}) => {
+  const normalizedVisibility = {};
+
+  CUSTOM_ACCOUNT_FIELDS.forEach((fieldName) => {
+    const fieldVisibility = visibility[fieldName];
+    normalizedVisibility[fieldName] = ['required', 'optional', 'hidden'].includes(fieldVisibility)
+      ? fieldVisibility
+      : DEFAULT_CUSTOM_FIELD_VISIBILITY;
+  });
+
+  return normalizedVisibility;
+};
+
 export const defaultState = {
   loading: false,
   loaded: false,
@@ -57,15 +72,15 @@ export const defaultState = {
     saveState: null,
     errors: {},
     options: {},
-    visibility: {},
+    visibility: normalizeCustomFieldVisibility(),
   },
 };
 
-const getCustomValues = data => data.values || CUSTOM_ACCOUNT_FIELDS.reduce((values, fieldName) => {
+const getCustomValues = (data) => data.values || CUSTOM_ACCOUNT_FIELDS.reduce((acc, fieldName) => {
   if (Object.prototype.hasOwnProperty.call(data, fieldName)) {
-    values[fieldName] = data[fieldName];
+    acc[fieldName] = data[fieldName];
   }
-  return values;
+  return acc;
 }, {});
 
 const reducer = (state = defaultState, action = {}) => {
@@ -114,9 +129,16 @@ const reducer = (state = defaultState, action = {}) => {
       }
       return {
         ...state,
-        customFields: { ...state.customFields, loading: true, loaded: false, loadingError: null },
+        customFields: {
+          ...state.customFields, loading: true, loaded: false, loadingError: null,
+        },
       };
-    case FETCH_CUSTOM_FIELDS.SUCCESS:
+    case FETCH_CUSTOM_FIELDS.SUCCESS: {
+      const customFieldVisibility = action.payload.visibility
+        || action.payload.visibility_metadata
+        || action.payload.metadata?.visibility
+        || {};
+
       return {
         ...state,
         customFields: {
@@ -124,21 +146,24 @@ const reducer = (state = defaultState, action = {}) => {
           loading: false,
           loaded: true,
           loadingError: null,
-          values: { ...state.customFields.values, ...getCustomValues(action.payload) },
+          values: {
+            ...state.customFields.values,
+            ...getCustomValues(action.payload),
+          },
           options: action.payload.options
             || action.payload.field_options
             || action.payload.metadata?.options
             || {},
-          visibility: action.payload.visibility
-            || action.payload.visibility_metadata
-            || action.payload.metadata?.visibility
-            || {},
+          visibility: normalizeCustomFieldVisibility(customFieldVisibility),
         },
       };
+    }
     case FETCH_CUSTOM_FIELDS.FAILURE:
       return {
         ...state,
-        customFields: { ...state.customFields, loading: false, loaded: false, loadingError: action.payload.error },
+        customFields: {
+          ...state.customFields, loading: false, loaded: false, loadingError: action.payload.error,
+        },
       };
 
     case OPEN_FORM:
@@ -174,7 +199,9 @@ const reducer = (state = defaultState, action = {}) => {
       }
       return state;
     case CLOSE_CUSTOM_FORM:
-      if (action.payload.formId !== state.customFields.openFormId) return state;
+      if (action.payload.formId !== state.customFields.openFormId) {
+        return state;
+      }
       return {
         ...state,
         customFields: {
@@ -234,7 +261,12 @@ const reducer = (state = defaultState, action = {}) => {
         ...state,
         customFields: { ...state.customFields, saveState: 'pending', errors: {} },
       };
-    case SAVE_CUSTOM_FIELD.SUCCESS:
+    case SAVE_CUSTOM_FIELD.SUCCESS: {
+      const customFieldVisibility = action.payload.visibility
+        || action.payload.visibility_metadata
+        || action.payload.metadata?.visibility
+        || state.customFields.visibility;
+
       return {
         ...state,
         customFields: {
@@ -249,12 +281,10 @@ const reducer = (state = defaultState, action = {}) => {
             || action.payload.field_options
             || action.payload.metadata?.options
             || state.customFields.options,
-          visibility: action.payload.visibility
-            || action.payload.visibility_metadata
-            || action.payload.metadata?.visibility
-            || state.customFields.visibility,
+          visibility: normalizeCustomFieldVisibility(customFieldVisibility),
         },
       };
+    }
     case SAVE_CUSTOM_FIELD.FAILURE:
       return {
         ...state,
