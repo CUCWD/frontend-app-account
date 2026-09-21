@@ -1,4 +1,4 @@
-import { call, put, select } from 'redux-saga/effects';
+import { call, put } from 'redux-saga/effects';
 
 import reducer, { defaultState } from './reducers';
 import {
@@ -59,6 +59,35 @@ describe('custom account fields reducer', () => {
         zipcode: 'optional',
       },
     });
+  });
+
+  it('normalizes visibility for all allowlisted fields and ignores unknown fields', () => {
+    const state = reducer(defaultState, {
+      type: FETCH_CUSTOM_FIELDS.SUCCESS,
+      payload: {
+        metadata: {
+          visibility: {
+            ethnicity: 'required',
+            employment_status: 'optional',
+            enrolled_in_school: 'hidden',
+            enrolled_in_school_type: 'required',
+            local_community_living: 'hidden',
+            zipcode: 'optional',
+            username: 'hidden',
+          },
+        },
+      },
+    });
+
+    expect(state.customFields.visibility).toEqual({
+      ethnicity: 'required',
+      employment_status: 'optional',
+      enrolled_in_school: 'hidden',
+      enrolled_in_school_type: 'required',
+      local_community_living: 'hidden',
+      zipcode: 'optional',
+    });
+    expect(state.customFields.visibility).not.toHaveProperty('username');
   });
 
   it('keeps custom drafts, editing, save state, and errors isolated from core state', () => {
