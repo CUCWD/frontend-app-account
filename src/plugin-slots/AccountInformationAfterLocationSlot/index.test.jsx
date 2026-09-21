@@ -62,4 +62,31 @@ describe('AccountInformationAfterLocationSlot', () => {
     expect(screen.queryByText('ZIP Code')).not.toBeInTheDocument();
     expect(container).not.toHaveTextContent('12345');
   });
+
+  it('marks the zipcode field as required with the existing label convention', () => {
+    const store = mockStore({
+      accountSettings: {
+        customFields: {
+          values: { zipcode: '12345' },
+          drafts: {},
+          options: {},
+          visibility: { zipcode: 'required' },
+          errors: {},
+          openFormId: null,
+          saveState: null,
+        },
+      },
+    });
+
+    render(
+      <IntlProvider locale="en">
+        <Provider store={store}>
+          <AccountInformationAfterLocationSlot />
+        </Provider>
+      </IntlProvider>,
+    );
+
+    expect(screen.getByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'ZIP Code *'))
+      .toBeInTheDocument();
+  });
 });
