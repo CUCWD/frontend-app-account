@@ -85,6 +85,13 @@ describe('custom account field service', () => {
     });
   });
 
+  it('preserves non-field network failures', async () => {
+    const networkError = new Error('Network unavailable');
+    client.get.mockRejectedValue(networkError);
+
+    await expect(getCustomFields()).rejects.toBe(networkError);
+  });
+
   it('does not send custom fields through the core account API', async () => {
     await expect(patchSettings('alice', { zipcode: '12345' })).resolves.toEqual({});
     expect(client.patch).not.toHaveBeenCalled();

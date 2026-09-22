@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`EditableSelectField renders EditableSelectField correctly with editing disabled 1`] = `
 <div
@@ -103,6 +103,7 @@ exports[`EditableSelectField renders EditableSelectField correctly with editing 
         >
           <text
             aria-describedby="field-testField-2"
+            aria-required={false}
             className="has-value form-control is-invalid"
             data-hj-suppress={true}
             id="field-testField"
