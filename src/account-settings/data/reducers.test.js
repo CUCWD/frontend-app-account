@@ -153,6 +153,45 @@ describe('custom account fields reducer', () => {
     expect(state.saveState).toBe('pending');
     expect(state.customFields.saveState).toBeNull();
   });
+
+  it('cancels a custom edit without changing committed values', () => {
+    const editingState = reducer(defaultState, {
+      type: OPEN_CUSTOM_FORM,
+      payload: { formId: 'zipcode' },
+    });
+    const draftState = reducer(editingState, {
+      type: UPDATE_CUSTOM_DRAFT,
+      payload: { name: 'zipcode', value: '90210' },
+    });
+    const cancelledState = reducer({
+      ...draftState,
+      customFields: {
+        ...draftState.customFields,
+        values: { zipcode: '12345' },
+      },
+    }, {
+      type: 'CLOSE_CUSTOM_FORM',
+      payload: { formId: 'zipcode' },
+    });
+
+    expect(cancelledState.customFields).toMatchObject({
+      values: { zipcode: '12345' },
+      drafts: {},
+      openFormId: null,
+      saveState: null,
+    });
+  });
+
+  it('keeps core and custom save states independent after success', () => {
+    const customSavingState = reducer(defaultState, { type: SAVE_CUSTOM_FIELD.BEGIN });
+    const coreSavedState = reducer(customSavingState, {
+      type: SAVE_SETTINGS.SUCCESS,
+      payload: { values: { country: 'US' }, confirmationValues: {} },
+    });
+
+    expect(coreSavedState.saveState).toBe('complete');
+    expect(coreSavedState.customFields.saveState).toBe('pending');
+  });
 });
 
 describe('custom account field sagas', () => {

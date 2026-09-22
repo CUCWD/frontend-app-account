@@ -9,7 +9,15 @@ export const accountSettingsSelector = state => state[storeName];
 
 export const customFieldsSelector = createSelector(
   accountSettingsSelector,
-  accountSettings => accountSettings.customFields,
+  accountSettings => accountSettings.customFields || {
+    values: {},
+    drafts: {},
+    options: {},
+    visibility: {},
+    errors: {},
+    openFormId: null,
+    saveState: null,
+  },
 );
 
 export const customValuesSelector = createSelector(
@@ -131,8 +139,9 @@ const countriesSelector = createSelector(
 const editableFieldErrorSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
-  (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
-    ? accountSettings.customFields.errors[name]
+  customFieldsSelector,
+  (name, accountSettings, customFields) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? customFields.errors[name]
     : accountSettings.errors?.[name],
 );
 
@@ -145,8 +154,9 @@ const editableFieldConfirmationValuesSelector = createSelector(
 const isEditingSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
-  (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
-    ? accountSettings.customFields.openFormId === name
+  customFieldsSelector,
+  (name, accountSettings, customFields) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? customFields.openFormId === name
     : accountSettings.openFormId === name,
 );
 
@@ -163,8 +173,9 @@ const nameChangeModalSelector = createSelector(
 const saveStateSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
-  (name, accountSettings) => CUSTOM_ACCOUNT_FIELDS.includes(name)
-    ? accountSettings.customFields.saveState
+  customFieldsSelector,
+  (name, accountSettings, customFields) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+    ? customFields.saveState
     : accountSettings.saveState,
 );
 

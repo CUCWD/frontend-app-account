@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import configureStore from 'redux-mock-store';
 import { IntlProvider } from '@edx/frontend-platform/i18n';
@@ -101,5 +101,45 @@ describe('ProfileInformationAfterDefaultsSlot', () => {
     expect(screen.queryByText('Enrolled in school')).not.toBeInTheDocument();
     expect(screen.queryByText('School type')).not.toBeInTheDocument();
     expect(screen.queryByText('Local community living')).not.toBeInTheDocument();
+  });
+
+  it('renders optional fields without a required marker and routes editing through custom actions', () => {
+    const store = mockStore({
+      accountSettings: {
+        customFields: {
+          values: { ethnicity: 'asian' },
+          drafts: {},
+          options: { ethnicity: [{ value: 'asian', label: 'Asian' }] },
+          visibility: {
+            ethnicity: 'optional',
+            employment_status: 'hidden',
+            enrolled_in_school: 'hidden',
+            enrolled_in_school_type: 'hidden',
+            local_community_living: 'hidden',
+          },
+          errors: {},
+          openFormId: null,
+          saveState: null,
+        },
+      },
+    });
+
+    render(
+      <IntlProvider locale="en">
+        <Provider store={store}>
+          <ProfileInformationAfterDefaultsSlot />
+        </Provider>
+      </IntlProvider>,
+    );
+
+    expect(screen.getByText('Ethnicity')).toBeInTheDocument();
+    expect(screen.queryByText((_, node) => node?.textContent?.replace(/\s+/g, ' ').trim() === 'Ethnicity *'))
+      .not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /edit/i }));
+
+    expect(store.getActions()).toEqual(expect.arrayContaining([
+      { type: 'OPEN_CUSTOM_FORM', payload: { formId: 'ethnicity' } },
+    ]));
   });
 });
