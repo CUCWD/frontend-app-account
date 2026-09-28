@@ -43,10 +43,12 @@ export const customVisibilitySelector = createSelector(
 export const customFormValuesSelector = createSelector(
   customValuesSelector,
   customDraftsSelector,
-  (values, drafts) => [...new Set([...Object.keys(values), ...Object.keys(drafts)])].reduce((formValues, name) => {
-    formValues[name] = drafts[name] !== undefined ? drafts[name] : values[name];
-    return formValues;
-  }, {}),
+  (values, drafts) => Object.fromEntries(
+    [...new Set([...Object.keys(values), ...Object.keys(drafts)])].map(name => [
+      name,
+      drafts[name] !== undefined ? drafts[name] : values[name],
+    ]),
+  ),
 );
 
 const editableFieldNameSelector = (state, props) => props.name;
@@ -140,9 +142,9 @@ const editableFieldErrorSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
   customFieldsSelector,
-  (name, accountSettings, customFields) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+  (name, accountSettings, customFields) => (CUSTOM_ACCOUNT_FIELDS.includes(name)
     ? customFields.errors[name]
-    : accountSettings.errors?.[name],
+    : accountSettings.errors?.[name]),
 );
 
 const editableFieldConfirmationValuesSelector = createSelector(
@@ -155,9 +157,9 @@ const isEditingSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
   customFieldsSelector,
-  (name, accountSettings, customFields) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+  (name, accountSettings, customFields) => (CUSTOM_ACCOUNT_FIELDS.includes(name)
     ? customFields.openFormId === name
-    : accountSettings.openFormId === name,
+    : accountSettings.openFormId === name),
 );
 
 const errorSelector = createSelector(
@@ -174,9 +176,9 @@ const saveStateSelector = createSelector(
   editableFieldNameSelector,
   accountSettingsSelector,
   customFieldsSelector,
-  (name, accountSettings, customFields) => CUSTOM_ACCOUNT_FIELDS.includes(name)
+  (name, accountSettings, customFields) => (CUSTOM_ACCOUNT_FIELDS.includes(name)
     ? customFields.saveState
-    : accountSettings.saveState,
+    : accountSettings.saveState),
 );
 
 const customEditableFieldPropsSelector = createSelector(
