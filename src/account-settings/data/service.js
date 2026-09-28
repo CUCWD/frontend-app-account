@@ -15,16 +15,6 @@ const SOCIAL_PLATFORMS = [
   { id: 'facebook', key: 'social_link_facebook' },
   { id: 'linkedin', key: 'social_link_linkedin' },
 ];
-const SETTINGS_LOAD_TIMEOUT_MS = 30000;
-
-function withTimeout(promise, timeoutMs, errorMessage) {
-  let timeoutId;
-  const timeout = new Promise((resolve, reject) => {
-    timeoutId = setTimeout(() => reject(new Error(errorMessage)), timeoutMs);
-  });
-
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
-}
 
 export const CUSTOM_ACCOUNT_FIELDS = [
   'ethnicity',
@@ -290,14 +280,14 @@ export async function getSettings(username, userRoles) {
     profileDataManager,
     timeZones,
     countries,
-  ] = await withTimeout(Promise.all([
+  ] = await Promise.all([
     getAccount(username),
     getPreferences(username),
     getThirdPartyAuthProviders(),
     getProfileDataManager(username, userRoles),
     getTimeZones(),
     getCountryList(),
-  ]), SETTINGS_LOAD_TIMEOUT_MS, 'Account settings could not be loaded. Please try again.');
+  ]);
 
   return {
     ...account,

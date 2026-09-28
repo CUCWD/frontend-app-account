@@ -1,11 +1,9 @@
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
-import { getThirdPartyAuthProviders } from '../third-party-auth';
 
 import {
   CUSTOM_ACCOUNT_FIELDS,
   getCustomFields,
-  getSettings,
   patchCustomFields,
   patchSettings,
 } from './service';
@@ -22,10 +20,6 @@ jest.mock('@edx/frontend-platform/logging', () => ({
   logError: jest.fn(),
 }));
 
-jest.mock('../third-party-auth', () => ({
-  getThirdPartyAuthProviders: jest.fn(),
-}));
-
 describe('custom account field service', () => {
   const requestUrl = 'https://lms.example.test/api/custom-reg-form/v1/me/';
   let client;
@@ -34,7 +28,6 @@ describe('custom account field service', () => {
     getConfig.mockReturnValue({ LMS_BASE_URL: 'https://lms.example.test' });
     client = { get: jest.fn(), patch: jest.fn() };
     getAuthenticatedHttpClient.mockReturnValue(client);
-    getThirdPartyAuthProviders.mockResolvedValue([]);
   });
 
   it('gets custom fields through the authenticated custom API and preserves metadata', async () => {
@@ -102,30 +95,5 @@ describe('custom account field service', () => {
   it('does not send custom fields through the core account API', async () => {
     await expect(patchSettings('alice', { zipcode: '12345' })).resolves.toEqual({});
     expect(client.patch).not.toHaveBeenCalled();
-  });
-
-  it('rejects account settings loads that do not resolve within thirty seconds', async () => {
-    jest.useFakeTimers();
-    client.get.mockImplementation(url => {
-      if (url.includes('/api/user/v1/accounts/')) {
-        return new Promise(() => {});
-      }
-      if (url.includes('/preferences/time_zones/')) {
-        return Promise.resolve({ data: [] });
-      }
-      if (url.includes('/registration/')) {
-        return Promise.resolve({ data: { fields: [] } });
-      }
-      return Promise.resolve({ data: {} });
-    });
-
-    const settingsPromise = getSettings('alice', []);
-    const settingsRejection = expect(settingsPromise).rejects.toThrow(
-      'Account settings could not be loaded. Please try again.',
-    );
-    await jest.advanceTimersByTimeAsync(30000);
-
-    await settingsRejection;
-    jest.useRealTimers();
   });
 });
