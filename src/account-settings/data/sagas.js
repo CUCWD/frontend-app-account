@@ -57,6 +57,21 @@ import {
   patchCustomFields,
 } from './service';
 
+export function* handleFetchCustomFields() {
+  try {
+    const customFieldsState = yield select(state => state.accountSettings?.customFields || {});
+    if (customFieldsState.loading || customFieldsState.loaded) {
+      return;
+    }
+
+    yield put(fetchCustomFieldsBegin());
+    const customFields = yield call(getCustomFields);
+    yield put(fetchCustomFieldsSuccess(customFields));
+  } catch (e) {
+    yield put(fetchCustomFieldsFailure(e.message));
+  }
+}
+
 export function* handleFetchSettings() {
   try {
     yield put(fetchSettingsBegin());
@@ -87,21 +102,6 @@ export function* handleFetchSettings() {
   } catch (e) {
     yield put(fetchSettingsFailure(e.message));
     throw e;
-  }
-}
-
-export function* handleFetchCustomFields() {
-  try {
-    const customFieldsState = yield select(state => state.accountSettings?.customFields || {});
-    if (customFieldsState.loading || customFieldsState.loaded) {
-      return;
-    }
-
-    yield put(fetchCustomFieldsBegin());
-    const customFields = yield call(getCustomFields);
-    yield put(fetchCustomFieldsSuccess(customFields));
-  } catch (e) {
-    yield put(fetchCustomFieldsFailure(e.message));
   }
 }
 
