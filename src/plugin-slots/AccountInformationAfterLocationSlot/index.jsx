@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { injectIntl, intlShape } from '@edx/frontend-platform/i18n';
 import { PluginSlot } from '@openedx/frontend-plugin-framework';
 
-import EditableSelectField from '../../account-settings/EditableSelectField';
+import EditableField from '../../account-settings/EditableField';
 import { customFormValuesSelector, customVisibilitySelector } from '../../account-settings/data/selectors';
 import { updateDraft, saveSettings } from '../../account-settings/data/actions';
 
@@ -21,7 +21,7 @@ const AccountInformationAfterLocationSlot = ({
 
   return (
     <PluginSlot id="org.skilredi.frontend.account.account_information_after_location.v1">
-      <EditableSelectField
+      <EditableField
         name="zipcode"
         type="text"
         value={zipcode}
@@ -36,7 +36,6 @@ const AccountInformationAfterLocationSlot = ({
           defaultMessage: 'Add ZIP code',
           description: 'Placeholder for empty ZIP code field.',
         })}
-        options={[]}
         isEditable
         onChange={onChange}
         onSubmit={(formId, commitValues) => onSubmit(formId, commitValues)}
