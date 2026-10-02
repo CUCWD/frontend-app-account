@@ -1,181 +1,92 @@
 import { getConfig } from '@edx/frontend-platform';
 import { getAuthenticatedHttpClient } from '@edx/frontend-platform/auth';
-import { logError } from '@edx/frontend-platform/logging';
-import { FIELD_LABELS } from './constants';
+
 import {
-  getAccount,
-  patchAccount,
-  getPreferences,
-  patchPreferences,
-  getTimeZones,
-  getProfileDataManager,
-  getVerifiedName,
-  getVerifiedNameHistory,
-  postVerifiedName,
-  getCountryList,
+  CUSTOM_ACCOUNT_FIELDS,
+  getCustomFields,
+  patchCustomFields,
   patchSettings,
 } from './service';
 
-jest.mock('@edx/frontend-platform');
-jest.mock('@edx/frontend-platform/auth');
-jest.mock('@edx/frontend-platform/logging');
+jest.mock('@edx/frontend-platform', () => ({
+  getConfig: jest.fn(),
+}));
 
-const mockHttpClient = {
-  get: jest.fn(),
-  patch: jest.fn(),
-  post: jest.fn(),
-};
+jest.mock('@edx/frontend-platform/auth', () => ({
+  getAuthenticatedHttpClient: jest.fn(),
+}));
 
-getAuthenticatedHttpClient.mockReturnValue(mockHttpClient);
-getConfig.mockReturnValue({ LMS_BASE_URL: 'http://lms.test' });
+jest.mock('@edx/frontend-platform/logging', () => ({
+  logError: jest.fn(),
+}));
 
-beforeEach(() => {
-  jest.clearAllMocks();
-});
+describe('custom account field service', () => {
+  const requestUrl = 'https://lms.example.test/api/custom-reg-form/v1/me/';
+  let client;
 
-describe('account service', () => {
-  describe('getAccount', () => {
-    it('returns unpacked account data', async () => {
-      const apiResponse = {
-        username: 'testuser',
-        social_links: [{ platform: 'twitter', social_link: 'http://t' }],
-        language_proficiencies: [{ code: 'en' }],
-      };
-      mockHttpClient.get.mockResolvedValue({ data: apiResponse });
+  beforeEach(() => {
+    getConfig.mockReturnValue({ LMS_BASE_URL: 'https://lms.example.test' });
+    client = { get: jest.fn(), patch: jest.fn() };
+    getAuthenticatedHttpClient.mockReturnValue(client);
+  });
 
-      const result = await getAccount('testuser');
-      expect(mockHttpClient.get).toHaveBeenCalledWith('http://lms.test/api/user/v1/accounts/testuser');
-      expect(result.social_link_twitter).toEqual('http://t');
-      expect(result.language_proficiencies).toEqual('en');
+  it('gets custom fields through the authenticated custom API and preserves metadata', async () => {
+    const response = {
+      data: {
+        zipcode: '12345',
+        metadata: { visibility: { zipcode: 'required' } },
+      },
+    };
+    client.get.mockResolvedValue(response);
+
+    await expect(getCustomFields()).resolves.toEqual(response.data);
+    expect(getAuthenticatedHttpClient).toHaveBeenCalled();
+    expect(client.get).toHaveBeenCalledWith(requestUrl);
+  });
+
+  it('patches only supported custom fields and preserves the response metadata', async () => {
+    const response = {
+      data: {
+        zipcode: '12345',
+        metadata: { visibility: { zipcode: 'required' } },
+      },
+    };
+    client.patch.mockResolvedValue(response);
+
+    await expect(
+      patchCustomFields({ zipcode: '12345', username: 'alice' }),
+    ).resolves.toEqual(response.data);
+    expect(client.patch).toHaveBeenCalledWith(
+      requestUrl,
+      { zipcode: '12345' },
+      { headers: { 'Content-Type': 'application/json' } },
+    );
+    expect(Object.keys(client.patch.mock.calls[0][1])).toEqual(['zipcode']);
+    expect(CUSTOM_ACCOUNT_FIELDS).not.toContain('username');
+  });
+
+  it('rejects patches that do not contain exactly one custom field', async () => {
+    await expect(patchCustomFields({})).rejects.toThrow(
+      'patchCustomFields requires exactly one custom field',
+    );
+    await expect(patchCustomFields({ zipcode: '12345', ethnicity: 'as' })).rejects.toThrow(
+      'patchCustomFields requires exactly one custom field',
+    );
+    expect(client.patch).not.toHaveBeenCalled();
+  });
+
+  it('normalizes array field errors into frontend field error strings', async () => {
+    client.patch.mockRejectedValue({
+      response: { data: { zipcode: ['Must be a valid zipcode.'] } },
+    });
+
+    await expect(patchCustomFields({ zipcode: 'invalid' })).rejects.toMatchObject({
+      fieldErrors: { zipcode: 'Must be a valid zipcode.' },
     });
   });
 
-  describe('patchAccount', () => {
-    it('sends packed commit data and returns unpacked response', async () => {
-      const commit = { social_link_twitter: 'http://t' };
-      const apiResponse = {
-        username: 'testuser',
-        social_links: [{ platform: 'twitter', social_link: 'http://t' }],
-        language_proficiencies: [],
-      };
-      mockHttpClient.patch.mockResolvedValue({ data: apiResponse });
-
-      const result = await patchAccount('testuser', commit);
-      expect(mockHttpClient.patch).toHaveBeenCalledWith(
-        'http://lms.test/api/user/v1/accounts/testuser',
-        expect.objectContaining({ social_links: [{ platform: 'twitter', social_link: 'http://t' }] }),
-        expect.any(Object),
-      );
-      expect(result.social_link_twitter).toEqual('http://t');
-    });
-  });
-
-  describe('getPreferences', () => {
-    it('returns preferences data', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: { theme: 'dark' } });
-      const result = await getPreferences('user');
-      expect(result.theme).toBe('dark');
-    });
-  });
-
-  describe('patchPreferences', () => {
-    it('patches preferences and returns commitValues', async () => {
-      mockHttpClient.patch.mockResolvedValue({});
-      const commit = { time_zone: 'UTC' };
-      const result = await patchPreferences('user', commit);
-      expect(mockHttpClient.patch).toHaveBeenCalled();
-      expect(result).toEqual(commit);
-    });
-  });
-
-  describe('getTimeZones', () => {
-    it('returns data from API', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: ['UTC', 'PST'] });
-      const result = await getTimeZones('PK');
-      expect(mockHttpClient.get).toHaveBeenCalledWith(
-        'http://lms.test/user_api/v1/preferences/time_zones/',
-        { params: { country_code: 'PK' } },
-      );
-      expect(result).toEqual(['UTC', 'PST']);
-    });
-  });
-
-  describe('getProfileDataManager', () => {
-    it('returns null if no enterprise manages profile', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: { results: [] } });
-      const result = await getProfileDataManager('user', ['learner']);
-      expect(result).toBeNull();
-    });
-
-    it('returns enterprise name if sync is enabled', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: { results: [{ enterprise_customer: { name: 'Acme', sync_learner_profile_data: true } }] } });
-      const result = await getProfileDataManager('user', ['enterprise_learner']);
-      expect(result).toBe('Acme');
-    });
-  });
-
-  describe('getVerifiedName', () => {
-    it('returns verified name data', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: { verified: true } });
-      const result = await getVerifiedName();
-      expect(result.verified).toBe(true);
-    });
-
-    it('returns {} on error', async () => {
-      mockHttpClient.get.mockRejectedValue(new Error('fail'));
-      const result = await getVerifiedName();
-      expect(result).toEqual({});
-    });
-  });
-
-  describe('getVerifiedNameHistory', () => {
-    it('returns verified name history data', async () => {
-      mockHttpClient.get.mockResolvedValue({ data: [{ id: 1 }] });
-      const result = await getVerifiedNameHistory();
-      expect(result[0].id).toBe(1);
-    });
-  });
-
-  describe('postVerifiedName', () => {
-    it('posts verified name data', async () => {
-      mockHttpClient.post.mockResolvedValue({});
-      await postVerifiedName({ first_name: 'A' });
-      expect(mockHttpClient.post).toHaveBeenCalledWith(
-        'http://lms.test/api/edx_name_affirmation/v1/verified_name',
-        { first_name: 'A' },
-        { headers: { Accept: 'application/json' } },
-      );
-    });
-  });
-
-  describe('getCountryList', () => {
-    it('extracts country values from registration API', async () => {
-      const apiResponse = { fields: [{ name: FIELD_LABELS.COUNTRY, options: [{ value: 'PK' }] }] };
-      mockHttpClient.get.mockResolvedValue({ data: apiResponse });
-      const result = await getCountryList();
-      expect(result).toEqual(['PK']);
-    });
-
-    it('returns [] and logs error on failure', async () => {
-      mockHttpClient.get.mockRejectedValue(new Error('fail'));
-      const result = await getCountryList();
-      expect(result).toEqual([]);
-      expect(logError).toHaveBeenCalled();
-    });
-  });
-
-  describe('patchSettings', () => {
-    it('calls patchAccount and patchPreferences as needed', async () => {
-      mockHttpClient.patch.mockResolvedValue({
-        data: {
-          username: 'user',
-          social_links: [],
-          language_proficiencies: [],
-        },
-      });
-
-      const result = await patchSettings('user', { time_zone: 'UTC', social_link_twitter: 't' });
-      expect(result.username).toBe('user');
-    });
+  it('does not send custom fields through the core account API', async () => {
+    await expect(patchSettings('alice', { zipcode: '12345' })).resolves.toEqual({});
+    expect(client.patch).not.toHaveBeenCalled();
   });
 });
