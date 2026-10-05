@@ -25,6 +25,7 @@ const AccountInformationAfterLocationSlot = ({
         name="zipcode"
         type="text"
         value={zipcode}
+        isRequired={visibility?.zipcode === 'required'}
         label={intl.formatMessage({
           id: 'account.settings.field.zipcode',
           defaultMessage: 'ZIP Code',

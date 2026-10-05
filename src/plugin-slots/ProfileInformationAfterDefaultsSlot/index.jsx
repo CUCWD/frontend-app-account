@@ -37,6 +37,7 @@ const ProfileInformationAfterDefaultsSlot = ({
           type="select"
           value={values[name]}
           options={options[name] || []}
+          isRequired={visibility?.[name] === 'required'}
           label={intl.formatMessage({
             id: `account.settings.field.${name}`,
             defaultMessage: label,
